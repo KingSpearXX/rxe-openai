@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record and Transcribe Audio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Control Box for Recording -->
+        <div class="control-box">
+            <button id="start-record">Start Recording</button>
+            <button id="stop-record" disabled>Stop Recording</button>
+            <div class="preloader" id="preloader"></div>
+        </div>
+
+        <!-- Log Box for Responses -->
+        <div class="log-box" id="log-box">
+            <ul id="log-list" class="log-list"></ul>
+        </div>
+        <button id="clear-log" class="clear-button">Clear Responses</button>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let silenceTimeout;
+        let responseLog = JSON.parse(localStorage.getItem('responseLog')) || []; // Load the log from local storage
+
+        const startRecordButton = document.getElementById("start-record");
+        const stopRecordButton = document.getElementById("stop-record");
+        const preloader = document.getElementById("preloader");
+        const logBox = document.getElementById("log-box");
+        const logList = document.getElementById("log-list");
+        const clearLogButton = document.getElementById("clear-log");
+
+        const silenceThreshold = 0.01;
+        const silenceDelay = 2000;
+
+        // Show preloader
+        function showPreloader() {
+            preloader.style.display = 'block';
+        }
+
+        // Hide preloader
+        function hidePreloader() {
+            preloader.style.display = 'none';
+        }
+
+        // Update log display
+        function updateLogDisplay() {
+            logList.innerHTML = ''; // Clear the current log
+            responseLog.forEach((logItem, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerText = `#${index + 1}: ${logItem}`;
+                logList.appendChild(listItem);
+            });
+        }
+
+        // Save log to localStorage
+        function saveLogToLocalStorage() {
+            localStorage.setItem('responseLog', JSON.stringify(responseLog));
+        }
+
+        // Clear log
+        clearLogButton.addEventListener("click", () => {
+            responseLog = []; // Clear the in-memory log
+            saveLogToLocalStorage(); // Update localStorage
+            updateLogDisplay(); // Refresh display
+        });
+
+        async function detectSilence(stream) {
+            const audioContext = new AudioContext();
+            const analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+
+            analyser.fftSize = 2048;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            function checkSilence() {
+                analyser.getByteTimeDomainData(dataArray);
+                const isSilent = dataArray.every(val => Math.abs(val - 128) < silenceThreshold * 128);
+
+                if (isSilent) {
+                    if (!silenceTimeout) {
+                        silenceTimeout = setTimeout(() => {
+                            mediaRecorder.stop();
+                            startRecordButton.disabled = false;
+                            stopRecordButton.disabled = true;
+                        }, silenceDelay);
+                    }
+                } else {
+                    clearTimeout(silenceTimeout);
+                    silenceTimeout = null;
+                }
+
+                requestAnimationFrame(checkSilence);
+            }
+
+            checkSilence();
+        }
+
+        startRecordButton.addEventListener("click", async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
+
+                    // Prepare FormData to send the audio as multipart/form-data
+                    const formData = new FormData();
+                    formData.append("audio", audioBlob, "speech.mp3");
+
+                    // Show preloader while processing
+                    showPreloader();
+
+                    // Send audio as multipart/form-data to the backend
+                    const response = await fetch("/whisper", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    const result = await response.json();
+
+                    // Hide preloader once done
+                    hidePreloader();
+
+                    // Add the response to the log
+                    responseLog.push(result.transcription || "No response");
+                    responseLog.push(result.response || "No response");
+                    saveLogToLocalStorage(); // Save log to local storage
+                    updateLogDisplay(); // Update the log display
+
+                    // Reset for next recording
+                    audioChunks = [];
+                };
+
+                mediaRecorder.start();
+                detectSilence(stream); // Start detecting silence
+
+                startRecordButton.disabled = true;
+                stopRecordButton.disabled = false;
+            } catch (error) {
+                console.error("Error accessing microphone:", error);
+                alert("Could not access your microphone. Please check permissions.");
+            }
+        });
+
+        stopRecordButton.addEventListener("click", () => {
+            mediaRecorder.stop();
+            startRecordButton.disabled = false;
+            stopRecordButton.disabled = true;
+        });
+
+        // Initialize the log display on page load
+        updateLogDisplay();
+    </script>
+</body>
+
+</html>

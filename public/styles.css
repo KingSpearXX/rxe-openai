@@ -1,0 +1,114 @@
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        /* Center horizontally */
+        align-items: center;
+        /* Center vertically */
+        height: 100vh;
+        /* Full height of the viewport */
+        flex-direction: column;
+        /* Keep the column layout */
+    }
+
+
+    h1 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        width: 95%;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        /* Ensure content inside the container is centered vertically */
+    }
+
+    .control-box {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .log-box {
+        background-color: #f1f1f1;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: 60vh;
+    }
+
+    .log-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .log-list li {
+        background-color: #e2e2e2;
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .log-list :nth-child(odd) {
+        background-color: #fff;
+    }
+
+
+    .clear-button {
+        margin-top: 10px;
+        background-color: gray;
+    }
+
+    .preloader {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 5px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 5px solid #3498db;
+        animation: spin 1s linear infinite;
+        margin-top: 5px;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
