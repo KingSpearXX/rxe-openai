@@ -56,7 +56,7 @@
             responseLog.forEach((logItem, index) => {
                 const listItem = document.createElement('li');
                 listItem.innerText = `#${index + 1}: ${logItem}`;
-                logList.appendChild(listItem);
+                logList.insertBefore(listItem);
             });
         }
 
@@ -135,8 +135,8 @@
                     hidePreloader();
 
                     // Add the response to the log
-                    responseLog.push(result.transcription || "No response");
-                    responseLog.push(result.response || "No response");
+                    responseLog.unshift(result.transcription || "No response");
+                    responseLog.unshift(result.response || "No response");
                     saveLogToLocalStorage(); // Save log to local storage
                     updateLogDisplay(); // Update the log display
 
