@@ -135,8 +135,8 @@
                     hidePreloader();
 
                     // Add the response to the log
-                    responseLog.unshift(result.transcription || "No response");
-                    responseLog.unshift(result.response || "No response");
+                    responseLog.push(result.transcription || "No response");
+                    responseLog.push(result.response || "No response");
                     saveLogToLocalStorage(); // Save log to local storage
                     updateLogDisplay(); // Update the log display
 
